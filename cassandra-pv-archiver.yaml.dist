@@ -1,0 +1,193 @@
+# The "cassandra" section describes how the Cassandra PV Archiver connects to
+# the Apache Cassandra database.
+
+cassandra:
+  
+  # Several hosts can (and should) be specified so that the connection can be
+  # established even when one of the hosts is down. Typically, there is no need
+  # to specify all hosts because the client will automatically detect all other
+  # hosts once it has successfully connected to at least one host.
+   
+  # hosts:
+  #  - localhost
+  #  - cassandra1.example.com
+  #  - cassandra2.example.com
+  
+  # The port number only has to be changed when the Cassandra cluster does not
+  # listen on the default port.
+  
+  # port: 9042
+  
+  # The default name of the keyspace used by the archiver is "pv_archive", but
+  # this can be changed here.
+  
+  # keyspace: pv_archive
+  
+  # The username and password have to be specified when authentication has been
+  # enabled for the Apache Cassandra cluster.
+  
+  # username:
+  # password:
+  
+  # Usually, the fetchSize can be kept at its default value (zero). This will
+  # cause the default fetch size of the Cassandra driver to be used, which
+  # usually has a reasonable value.
+  
+  # fetchSize: 0
+  
+  # The useLocalConsistencyLevel option should nearly always be set to false
+  # (the default value). Before setting this option to true, carefully review
+  # the documentation and make sure that you fully understand the consequences
+  # of changing this option.
+   
+  # useLocalConsistencyLevel: false
+
+# The "server" section configures the general behavior of this archiving server.
+# In particular, it specifies which ports the archiving server listens on and
+# sets the the server's UUID.
+
+server:
+  
+  # The adminPort specifies the port on which the administrative web interface
+  # is made available. The default is port 4812.
+  
+  # adminPort: 4812
+  
+  # The archiveAccessPort specifies the port on which the archive can be
+  # queried. The default is port 9812.
+  
+  # archiveAccessPort: 9812
+  
+  # The interNodeCommunicationPort specifies the port on which this archiving
+  # server listens for requests from other archiving servers in the same
+  # cluster. Unlike Apache Cassandra, this port may be different for different
+  # servers within the same cluster. The default is port 9813.
+  
+  # interNodeCommunicationPort: 9813
+  
+  # The interNodeCommunicationRequestTimeout specifies how long a request from
+  # one archiving server to a different archiving server may take. Some requests
+  # that make modifications to a lot of channels (e.g. when a new configuration
+  # file is imported) may take a very long time to be processed, so this timeout
+  # should not be set too low. The default value is 900000 milliseconds
+  # (15 minutes).
+  
+  # interNodeCommunicationRequestTimeout: 900000
+  
+  # The listenAddress specifies the address of the interface on which this
+  # archiving server listens for incoming connections (on the specified ports).
+  # In addition to the specified address, the administrative interface and the
+  # archive-access interface are also made available on the loopback interface.
+  # This option should never be set to localhost or 127.0.0.1 because other
+  # archiving servers in the same cluster will try to contact this server on the
+  # specified address. If left empty (the default), the archiving server binds
+  # to the first non-loopback interface that it can find.
+  
+  # listenAddress:
+  
+  # Each server is identified by a UUID which most be unique within the whole
+  # cluster. There are three ways of specifying the UUID: On the command line,
+  # in this configuration file (using the uuid option) or in a separate file
+  # using the uuidFile option. In the last case, if the file does not exist yet,
+  # it is created with a randomly generated UUID. The uuidFile can be specifiedm
+  # as an absolute path or relative to the location of this configuration file.
+  # As the UUID must be unique, there are no default values for these two
+  # options.
+  
+  # uuid:
+  uuidFile: cassandra-pv-archiver-uuid.txt
+
+# The archiving server tries to run operations in parallel in order to reduce
+# the effective latency when modifying a large number of channels. The
+# "throttling" section controls how many operations are run in parallel. These
+# options may be changed to greater values in order to run more operations in
+# parallel and thus reduce the latency. They should be changed to lower values
+# when timeouts occcur because these timeouts are typically triggered by the
+# database cluster being overloaded with requests.
+# Some of the options in this section also control memory usage, so touching
+# these options is also a good idea when the JVM runs out of memory.
+
+throttling:
+
+  # The limits are configured separately for read and write statements and for
+  # statements run by the control-system supports and statements involing
+  # channel meta-data. As statements involving channel meta-data typically use
+  # light-weight transactions (LWTs) for modifying data, the write limit should
+  # typically be lower than the read limit. Control-system supports, on the
+  # other hand, typically do not involve LWTs, so that read statements are more
+  # expensive than write statements and should thus use a lower limit.
+
+  # maxConcurrentChannelMetaDataReadStatements: 64
+  # maxConcurrentChannelMetaDataWriteStatements: 16
+  # maxConcurrentControlSystemSupportReadStatements: 128
+  # maxConcurrentControlSystemSupportWriteStatements: 512
+
+  # The sample decimation process might consume a lot of memory when generating
+  # decimated samples from already existing source samples for a lot of
+  # channels. This memory consumption can be controlled by the options in the
+  # "throttling.sampleDecimation" section.
+
+  sampleDecimation:
+
+    # The amount of samples that may be fetched into memory is directly
+    # connected to memory usage. Each fetched sample occupies about 1 KB of
+    # memory (for scalar Channel Access samples), so one million samples are
+    # roughly equivalent to 1 GB of memory. The default value is 1000000.
+
+    # maxFetchedSamplesInMemory: 1000000
+
+    # The number of samples returned by a fetch operation is only known after
+    # the fetch operation has completed. For this reason, the limit for the
+    # number of samples to be fetched into memory might be exceeded after a
+    # fetch operation has completed. By limiting the number of fetch operations
+    # that may run concurrently, one can limit by how much the limit may be
+    # exceeded. The max. number of running fetch operations multiplied by the
+    # fetch size (configured with "cassandra.fetchSize") is the max. number of
+    # samples by which the limit defined above might be exceeded.
+
+    # maxRunningFetchOperations: 20
+
+# The "logging" section specifies where log messages are written and which kind
+# of messages are logged (log level).
+
+logging:
+
+  # The whole logging configuration can be overridden by specifying a custom
+  # configuration for Logback.
+  
+  # config: /path/to/my/custom/logback.xml
+  
+  # By default, all log messages are written to the standard output. By
+  # specifying a log file, they can be redirected to that file.
+  
+  # file: /path/to/my/cassandra-pv-archiver.log
+  
+  # The log level can be set globally ("root") and for individual parts of the
+  # class hierarchy. By default, messages of level INFO (and higher) are logged.
+  
+  level:
+
+    root: WARN
+    com.aquenos.cassandra.pvarchiver: INFO
+    com.aquenos.cassandra.pvarchiver.server.web.common.spring.PublicOnlyRequestMappingHandlerMapping: WARN
+
+# The "controlSystem" section contains a sub-section for each control-system
+# support. The options specified in that section are passed to the respective
+# control-system support on initialization. Typically, they act as default
+# values for options not explicitly specified on a per-channel basis.
+
+controlSystem:
+
+  # Options for the Channel Access control-system support are specified in this
+  # section. Please refer to the control-system support's documentation for a
+  # full list of all supported options.
+  
+  channelAccess:
+    
+    # The monitorMask controls which kinds of events cause an updated value to
+    # be sent by the Channel Access server and thus to be written to the
+    # archive. The default is "archive|alarm", meaning that value changes that
+    # are greater than the archive dead-band and alarm state changes result in
+    # an updated value being sent.
+    
+    # monitorMask: archive|alarm

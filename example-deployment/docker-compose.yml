@@ -1,0 +1,51 @@
+
+version: "3.8"
+services:
+  cassandra:
+    image: cassandra:3.11
+    hostname: cassandra
+    restart: always
+    #network_mode: host
+    networks:
+      - ca-net
+    volumes:
+      - ./storage/db:/var/lib/cassandra
+    environment:
+      - CASSANDRA_START_RPC=true
+    command: cassandra -f
+
+  cassandra-pv-archiver:
+    image: pklaus/cassandra-pv-archiver
+    build:
+      context: ..
+    hostname: cassandra-pv-archiver
+    restart: always
+    volumes:
+      - ./storage/logs:/storage/logs
+    #network_mode: host
+    networks:
+      - ca-net
+    ports:
+      - 4812:4812
+      - 9812:9812
+    expose:
+      - 9813
+    depends_on:
+      - cassandra
+
+  softioc:
+    image: pklaus/epics_base:7.0.2.2_debian
+    hostname: softioc
+    restart: always
+    stdin_open: true
+    tty: true
+    expose:
+      - "5064-5065/udp"
+      - "5064-5065"
+    networks:
+      - ca-net
+    working_dir: /epics/iocs/example/iocBoot/iocEXAMPLE
+    command: ./st.cmd
+
+networks:
+  ca-net:

@@ -1,0 +1,42 @@
+cassandra:
+  hosts:
+    - cassandra
+    #- 127.0.0.1
+    #- 192.168.179.35
+    #- localhost
+  #port: 9160 # special rpc localhost port
+  port: 9042
+  # keyspace: pv_archive
+  # username:
+  # password:
+  # fetchSize: 0
+  # useLocalConsistencyLevel: false
+
+server:
+  # adminPort: 4812
+  # archiveAccessPort: 9812
+  # interNodeCommunicationPort: 9813
+  # interNodeCommunicationRequestTimeout: 900000
+  # listenAddress:
+  uuid:  e80a4eae-ba67-4826-823c-51839898275c
+  # uuidFile: uuid.txt
+
+throttling:
+  # maxConcurrentChannelMetaDataReadStatements: 64
+  # maxConcurrentChannelMetaDataWriteStatements: 16
+  # maxConcurrentControlSystemSupportReadStatements: 128
+  # maxConcurrentControlSystemSupportWriteStatements: 512
+  sampleDecimation:
+    # maxFetchedSamplesInMemory: 1000000
+    # maxRunningFetchOperations: 20
+
+logging:
+  file: /storage/logs/cassandra-pv-archiver.log
+  level:
+    root: WARN
+    com.aquenos.cassandra.pvarchiver: INFO
+    com.aquenos.cassandra.pvarchiver.server.web.common.spring.PublicOnlyRequestMappingHandlerMapping: WARN
+
+controlSystem:
+  channelAccess:
+    # monitorMask: archive|alarm
